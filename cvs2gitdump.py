@@ -201,7 +201,7 @@ def main():
 
         for m in marks:
             f = marks[m]
-            mode = 0100755 if os.access(f.path, os.X_OK) else 0100644
+            mode = 0o100755 if os.access(f.path, os.X_OK) else 0o100644
             fn = node_path(cvs.cvsroot, None, f.path) # XXX
             if f.state == 'dead':
                 print('D', fn)
