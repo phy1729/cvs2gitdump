@@ -42,11 +42,12 @@ import time
 CHANGESET_FUZZ_SEC = 300
 
 def usage():
-    print >>sys.stderr, \
+    print(
             'usage: cvs2gitdump [-ah] [-z fuzz] [-e email_domain] ' \
                 '[-E log_encodings]\n' \
             '\t[-k rcs_keywords] [-b branch] [-m module] [-l last_revision]\n'\
-            '\tcvsroot [git_dir]'
+            '\tcvsroot [git_dir]',
+            file=sys.stderr)
 
 def main():
     email_domain = None
@@ -77,7 +78,8 @@ def main():
                 rcs.add_id_keyword(v)
             elif opt == '-m':
                 if v == '.git':
-                    print >>sys.stderr, 'Cannot handle the path named \'.git\''
+                    print('Cannot handle the path named \'.git\'',
+                          file=sys.stderr)
                     sys.exit(1)
                 modules.append(v)
             elif opt == '-l':
@@ -86,7 +88,7 @@ def main():
                 usage()
                 sys.exit(1)
     except Exception, msg:
-        print >>sys.stderr, msg
+        print(msg, file=sys.stderr)
         usage()
         sys.exit(1)
 
@@ -108,7 +110,7 @@ def main():
         outs = git.stdout.readlines()
         git.wait()
         if git.returncode != 0:
-            print >> sys.stderr, "Coundn't exec git"
+            print("Coundn't exec git", file=sys.stderr)
             sys.exit(git.returncode)
         git_tip = outs[2].strip()
 
@@ -119,7 +121,7 @@ def main():
             outs = git.stdout.readlines()
             git.wait()
             if git.returncode != 0:
-                print >> sys.stderr, "Coundn't exec git"
+                print("Coundn't exec git", file=sys.stderr)
                 sys.exit(git.returncode)
         last_author = outs[0].strip()
         last_ctime = float(outs[1].split()[0])
@@ -131,7 +133,7 @@ def main():
             last_author = last_author[:-1 * (1 + len(email_domain))]
 
     cvs = CvsConv(cvsroot, rcs, not do_incremental, fuzzsec)
-    print >>sys.stderr, '** walk cvs tree'
+    print('** walk cvs tree', file=sys.stderr)
     if len(modules) == 0:
         cvs.walk()
     else:
@@ -140,7 +142,7 @@ def main():
 
     changesets = sorted(cvs.changesets)
     nchangesets = len(changesets)
-    print >>sys.stderr, '** cvs has %d changeset' % (nchangesets)
+    print('** cvs has %d changeset' % (nchangesets), file=sys.stderr)
 
     if nchangesets <= 0:
         sys.exit(0)
@@ -183,18 +185,18 @@ def main():
                 pass
         log = log.encode('utf-8', 'ignore')
 
-        print 'commit refs/heads/' + git_branch
+        print('commit refs/heads/' + git_branch)
         markseq = markseq + 1
-        print 'mark :%d' % (markseq)
+        print('mark :%d' % (markseq))
         email = k.author if email_domain is None \
                 else k.author + '@' + email_domain
-        print 'author %s <%s> %d +0000' % (k.author, email, k.min_time)
-        print 'committer %s <%s> %d +0000' % (k.author, email, k.min_time)
+        print('author %s <%s> %d +0000' % (k.author, email, k.min_time))
+        print('committer %s <%s> %d +0000' % (k.author, email, k.min_time))
 
-        print 'data', len(log)
-        print log,
+        print('data', len(log))
+        print(log,)
         if do_incremental and git_tip is not None:
-            print 'from', git_tip
+            print('from', git_tip)
             git_tip = None
 
         for m in marks:
@@ -202,21 +204,21 @@ def main():
             mode = 0100755 if os.access(f.path, os.X_OK) else 0100644
             fn = node_path(cvs.cvsroot, None, f.path) # XXX
             if f.state == 'dead':
-                print 'D', fn
+                print('D', fn)
             else:
-                print 'M %o :%d %s' % (mode, m, fn)
-        print ''
+                print('M %o :%d %s' % (mode, m, fn))
+        print('')
         for tag in k.tags:
             if tag in extags:
                 continue
-            print 'reset refs/tags/%s' % (tag)
-            print 'from :%d' % (markseq)
-            print ''
+            print('reset refs/tags/%s' % (tag))
+            print('from :%d' % (markseq))
+            print('')
 
     if do_incremental and not found_last_revision:
         raise Exception('could not find the last revision')
 
-    print >>sys.stderr, '** dumped'
+    print('** dumped', file=sys.stderr)
 
 class FileRevision:
     def __init__(self, path, rev, state, markseq):
@@ -299,12 +301,14 @@ class CvsConv:
 
         for root, dirs, files in os.walk(path):
             if '.git' in dirs:
-                print >>sys.stderr, 'Ignore %s: cannot handle the path ' \
-                    'named \'.git\'' % (root + os.sep + '.git')
+                print('Ignore %s: cannot handle the path ' \
+                    'named \'.git\'' % (root + os.sep + '.git'),
+                    file=sys.stderr)
                 dirs.remove('.git')
             if '.git' in files:
-                print >>sys.stderr, 'Ignore %s: cannot handle the path ' \
-                    'named \'.git\'' % (root + os.sep + '.git')
+                print('Ignore %s: cannot handle the path ' \
+                    'named \'.git\'' % (root + os.sep + '.git'),
+                    file=sys.stderr)
                 files.remove('.git')
             for f in files:
                 if not f[-2:] == ',v': continue
@@ -378,7 +382,7 @@ class CvsConv:
                 a = ChangeSetKey(branches[b], v[2], v[1], rcsfile.getlog(v[0]),
                         v[6], self.fuzzsec)
             except Exception as e:
-                print >>sys.stderr, 'Aborted at %s %s' % (path, v[0])
+                print('Aborted at %s %s' % (path, v[0]), file=sys.stderr)
                 raise e
 
             a.put_file(path, k, v[3], self.markseq)
@@ -412,15 +416,17 @@ def git_dump_file(path, k, rcs, markseq):
     try:
         cont = rcs.expand_keyword(path, k)
     except RuntimeError, msg:
-        print >> sys.stderr, 'Unexpected runtime error on parsing', \
-                path, k, ':', msg
-        print >> sys.stderr, 'unlimit the resource limit may fix ' \
-                'this problem.'
+        print('Unexpected runtime error on parsing',
+                path, k, ':', msg,
+                file=sys.stderr)
+        print('unlimit the resource limit may fix '
+                'this problem.',
+                file=sys.stderr)
         sys.exit(1)
-    print 'blob'
-    print 'mark :%d' % markseq
-    print 'data', len(cont)
-    print cont
+    print('blob')
+    print('mark :%d' % markseq)
+    print('data', len(cont))
+    print(cont)
 
 class RcsKeywords:
     RCS_KW_AUTHOR   = (1 << 0)
