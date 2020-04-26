@@ -41,13 +41,14 @@ import time
 
 CHANGESET_FUZZ_SEC = 300
 
+
 def usage():
-    print(
-            'usage: cvs2gitdump [-ah] [-z fuzz] [-e email_domain] ' \
-                '[-E log_encodings]\n' \
-            '\t[-k rcs_keywords] [-b branch] [-m module] [-l last_revision]\n'\
-            '\tcvsroot [git_dir]',
-            file=sys.stderr)
+    print('usage: cvs2gitdump [-ah] [-z fuzz] [-e email_domain] '
+          '[-E log_encodings]\n'
+          '\t[-k rcs_keywords] [-b branch] [-m module] [-l last_revision]\n'
+          '\tcvsroot [git_dir]',
+          file=sys.stderr)
+
 
 def main():
     email_domain = None
@@ -105,8 +106,9 @@ def main():
     if len(args) == 2:
         do_incremental = True
         git = subprocess.Popen(['git', '--git-dir=' + args[1], 'log',
-            '--max-count', '1', '--date=raw', '--format=%ae%n%ad%n%H',
-            git_branch], stdout=subprocess.PIPE)
+                                '--max-count', '1', '--date=raw',
+                                '--format=%ae%n%ad%n%H', git_branch],
+                               stdout=subprocess.PIPE)
         outs = git.stdout.readlines()
         git.wait()
         if git.returncode != 0:
@@ -116,8 +118,9 @@ def main():
 
         if last_revision is not None:
             git = subprocess.Popen(['git', '--git-dir=' + args[1], 'log',
-                '--max-count', '1', '--date=raw', '--format=%ae%n%ad%n%H',
-                last_revision], stdout=subprocess.PIPE)
+                                    '--max-count', '1', '--date=raw',
+                                    '--format=%ae%n%ad%n%H', last_revision],
+                                   stdout=subprocess.PIPE)
             outs = git.stdout.readlines()
             git.wait()
             if git.returncode != 0:
@@ -220,6 +223,7 @@ def main():
 
     print('** dumped', file=sys.stderr)
 
+
 class FileRevision:
     def __init__(self, path, rev, state, markseq):
         self.path = path
@@ -294,7 +298,7 @@ class CvsConv:
         self.tags = dict()
         self.fuzzsec = fuzzsec
 
-    def walk(self, module = None):
+    def walk(self, module=None):
         p = [self.cvsroot]
         if module is not None: p.append(module)
         path = reduce(os.path.join, p)
@@ -302,28 +306,28 @@ class CvsConv:
         for root, dirs, files in os.walk(path):
             if '.git' in dirs:
                 print('Ignore %s: cannot handle the path ' \
-                    'named \'.git\'' % (root + os.sep + '.git'),
-                    file=sys.stderr)
+                      'named \'.git\'' % (root + os.sep + '.git'),
+                      file=sys.stderr)
                 dirs.remove('.git')
             if '.git' in files:
                 print('Ignore %s: cannot handle the path ' \
-                    'named \'.git\'' % (root + os.sep + '.git'),
-                    file=sys.stderr)
+                      'named \'.git\'' % (root + os.sep + '.git'),
+                      file=sys.stderr)
                 files.remove('.git')
             for f in files:
                 if not f[-2:] == ',v': continue
                 self.parse_file(root + os.sep + f)
 
-        for t,c in self.tags.items():
+        for t, c in self.tags.items():
             c.tags.append(t)
 
     def parse_file(self, path):
         rtags = dict()
-        rcsfile=rcsparse.rcsfile(path)
+        rcsfile = rcsparse.rcsfile(path)
         path_related = path[len(self.cvsroot) + 1:][:-2]
-        branches = {'1': 'HEAD', '1.1.1': 'VENDOR' }
+        branches = {'1': 'HEAD', '1.1.1': 'VENDOR'}
         have_111 = False
-        for k,v in rcsfile.symbols.items():
+        for k, v in rcsfile.symbols.items():
             r = v.split('.')
             if len(r) == 3:
                 branches[v] = 'VENDOR'
@@ -337,12 +341,12 @@ class CvsConv:
 
         # sort by time and revision
         revs = sorted(rcsfile.revs.items(), \
-                lambda a,b: cmp(a[1][1], b[1][1]) or cmp(b[1][0], a[1][0]))
+                lambda a, b: cmp(a[1][1], b[1][1]) or cmp(b[1][0], a[1][0]))
         p = '0'
         novendor = False
         have_initial_revision = False
         last_vendor_status = None
-        for k,v in revs:
+        for k, v in revs:
             r = k.split('.')
             if len(r) == 4 and r[0] == '1' and r[1] == '1' and r[2] == '1' \
                     and r[3] == '1':
@@ -380,7 +384,7 @@ class CvsConv:
             b = reduce(lambda a, b: a + '.' + b, r[:-1])
             try:
                 a = ChangeSetKey(branches[b], v[2], v[1], rcsfile.getlog(v[0]),
-                        v[6], self.fuzzsec)
+                                 v[6], self.fuzzsec)
             except Exception as e:
                 print('Aborted at %s %s' % (path, v[0]), file=sys.stderr)
                 raise e
@@ -399,7 +403,7 @@ class CvsConv:
                             self.tags[t].max_time < a.max_time:
                         self.tags[t] = a
 
-def node_path(r,n,p):
+def node_path(r, n, p):
     if r.endswith('/'):
         r = r[:-1]
     path = p[:-2]
@@ -417,11 +421,11 @@ def git_dump_file(path, k, rcs, markseq):
         cont = rcs.expand_keyword(path, k)
     except RuntimeError as msg:
         print('Unexpected runtime error on parsing',
-                path, k, ':', msg,
-                file=sys.stderr)
+              path, k, ':', msg,
+              file=sys.stderr)
         print('unlimit the resource limit may fix '
-                'this problem.',
-                file=sys.stderr)
+              'this problem.',
+              file=sys.stderr)
         sys.exit(1)
     print('blob')
     print('mark :%d' % markseq)
@@ -447,7 +451,7 @@ class RcsKeywords:
 
     rcs_expkw = {
         "Author":   RCS_KW_AUTHOR,
-        "Date":     RCS_KW_DATE ,
+        "Date":     RCS_KW_DATE,
         "Header":   RCS_KW_HEADER,
         "Id":       RCS_KW_ID,
         "Log":      RCS_KW_LOG,
@@ -480,7 +484,7 @@ class RcsKeywords:
         self.rcs_expkw[keyword] = self.RCS_KW_ID
         self.rerecomple()
 
-    def kflag_get(self,flags):
+    def kflag_get(self, flags):
         if flags is None:
             return self.RCS_KWEXP_DEFAULT
         fl = 0
@@ -572,11 +576,11 @@ class RcsKeywords:
                             if lline == '':
                                 logbuf += p.rstrip() + '\n'
                             else:
-                                logbuf += p + lline.lstrip() +  '\n'
+                                logbuf += p + lline.lstrip() + '\n'
                         if line == '':
                             logbuf += p.rstrip() + '\n'
                         else:
-                            logbuf += p + line.lstrip() +  '\n'
+                            logbuf += p + line.lstrip() + '\n'
                         line = ''
                     if (expkw & self.RCS_KW_SOURCE) != 0:
                         expbuf += filename
@@ -591,6 +595,7 @@ class RcsKeywords:
                 s += logbuf
                 logbuf = ''
         return s[:-1]
+
 
 # ----------------------------------------------------------------------
 # entry point
