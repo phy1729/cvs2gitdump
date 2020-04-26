@@ -87,7 +87,7 @@ def main():
             elif opt == '-h':
                 usage()
                 sys.exit(1)
-    except Exception, msg:
+    except Exception as msg:
         print(msg, file=sys.stderr)
         usage()
         sys.exit(1)
@@ -415,7 +415,7 @@ def node_path(r,n,p):
 def git_dump_file(path, k, rcs, markseq):
     try:
         cont = rcs.expand_keyword(path, k)
-    except RuntimeError, msg:
+    except RuntimeError as msg:
         print('Unexpected runtime error on parsing',
                 path, k, ':', msg,
                 file=sys.stderr)
